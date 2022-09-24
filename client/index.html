@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My First Web Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container">
+        <div class="row m-0">
+            <div class="p-5 my-5 bg-light rounded-3 col-md-12 col-lg-6 mx-auto">
+                <form action="/" method="post" enctype="multipart/form-data" id="fileUploadForm">
+                    <h4 class="mb-3"> Upload your Order file</h4>
+                    <p class="m-0">Please Note:</p>
+                    <ul>
+                        <li>Only .csv files are allowed.</li>
+                        <li>Maximum file size is 2MB.</li>
+                    </ul>
+                    <div class="d-flex align-items-center">
+                        <input name="ordersFile" type="file" class="form-control">
+                        <button type="submit" id="uploadFile" class="btn btn-primary mx-2">Submit</button>
+                    </div>
+                </form>
+                <div id="result-content"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+</html>
+<script>
+    // save each content of the variable in csv file
+    function downloadCSV(content, filename) {
+        var csvFile;
+        var downloadLink;
+
+        // CSV file
+        csvFile = new Blob([content], {
+            type: "text/csv"
+        });
+
+        // Download link
+        downloadLink = document.createElement("a");
+
+        // File name
+        downloadLink.download = filename;
+
+        // Create a link to the file
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+
+        // Hide download link
+        downloadLink.style.display = "none";
+
+        // Add the link to DOM
+        document.body.appendChild(downloadLink);
+
+        // Click download link
+        downloadLink.click();
+        downloadLink.remove()
+    }
+
+    var form = document.getElementById("fileUploadForm");
+
+    var my_func = function (event) {
+        event.preventDefault();
+        // check file extension
+        var file = document.getElementById('fileUploadForm').elements[0].files[0];
+        var ext = file.name.split('.').pop();
+        if (ext != 'csv') {
+            alert('Please upload csv file');
+            return false;
+        }
+        // check file size
+        if (file.size > 1000000) {
+            alert('File size is too big');
+            return false;
+        }
+
+        // ajax upload file to server and get response
+        $.ajax({
+            url: '/csvFiles',
+            type: 'POST',
+            data: new FormData($('#fileUploadForm')[0]),
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                const { fileName, content } = data;
+                console.log(`File ${fileName} uploaded successfully!`);
+                // print the result in the page
+                $('#result-content').html(`<p class="alert alert-success w-100 my-5 text-center">File ${fileName} uploaded successfully!</p>`);
+
+                content.map((item, index) => {
+                    downloadCSV(item, index + '_' + fileName);
+                });
+
+            },
+            error: function (data) {
+                alert(data);
+            }
+        });
+    };
+
+    // attach event listener
+    form.addEventListener("submit", my_func, true);
+
+
+</script>
+
+</html>
